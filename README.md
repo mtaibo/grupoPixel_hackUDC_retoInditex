@@ -5,7 +5,7 @@ python -m venv venv
 
 source venv/bin/activate
 
-pip install fastapi uvicorn open-clip-torch faiss-cpu torch torchvision pillow pandas pyarrow
+pip install fastapi uvicorn open-clip-torch faiss-cpu torch torchvision pillow pandas pyarrow python-multipart
 
 uvicorn main:app --host 0.0.0.0 --port 8001
 python3 -m http.server 3000
