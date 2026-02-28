@@ -75,7 +75,6 @@
     overflow: hidden;
   }
 
-  /* LEFT PANEL - Input */
   .input-panel {
     padding: 28px 40px;
     border-right: 1px solid rgba(26,18,8,0.1);
@@ -93,7 +92,6 @@
     color: var(--terracotta);
   }
 
-  /* IMAGE PREVIEW */
   .preview-container {
     position: relative;
     width: 100%;
@@ -140,7 +138,6 @@
     line-height: 1.6;
   }
 
-  /* INPUT METHODS */
   .divider {
     display: flex;
     align-items: center;
@@ -244,7 +241,6 @@
 
   .search-btn .btn-text { position: relative; z-index: 1; }
 
-  /* RIGHT PANEL - Results */
   .results-panel {
     padding: 28px 40px;
     display: flex;
@@ -272,7 +268,6 @@
     text-transform: uppercase;
   }
 
-  /* Empty state */
   .empty-state {
     flex: 1;
     display: flex;
@@ -294,7 +289,6 @@
     max-width: 200px;
   }
 
-  /* Loading */
   .loading-state {
     flex: 1;
     display: none;
@@ -325,7 +319,6 @@
     opacity: 0.5;
   }
 
-  /* Results list */
   .garments-list {
     display: flex;
     flex-direction: column;
@@ -409,7 +402,6 @@
 
   .search-link:hover { background: var(--ink); color: var(--cream); }
 
-  /* Error */
   .error-msg {
     padding: 16px 20px;
     background: rgba(196,98,45,0.08);
@@ -421,7 +413,6 @@
 
   .error-msg.visible { display: block; }
 
-  /* RESPONSIVE */
   @media (max-width: 900px) {
     html, body { overflow: auto; }
     header { padding: 12px 20px; }
@@ -500,29 +491,27 @@
       <p>Analizando la imagen…</p>
     </div>
 
-    <!-- Garments list -->
     <div class="garments-list" id="garmentsList"></div>
 
   </div>
 </div>
 
 <script>
-  // ── Configuración ─────────────────────────────────────────
+  // Configuración
   const API_URL     = 'http://localhost:8001';
-  const CSV_PATH    = 'product_dataset.csv';   // mismo directorio que el HTML
+  const CSV_PATH    = 'product_dataset.csv';
 
   let currentImageFile = null;
   let currentImageUrl  = null;
-  let productImageMap  = {};   // { product_asset_id: image_url }
+  let productImageMap  = {};
 
-  // ── Cargar CSV al inicio ──────────────────────────────────
+  // Cargar CSV
   async function loadProductCSV() {
     try {
       const res  = await fetch(CSV_PATH);
       const text = await res.text();
-      const lines = text.trim().split('\n').slice(1); // saltar cabecera
+      const lines = text.trim().split('\n').slice(1);
       lines.forEach(line => {
-        // formato: product_asset_id,product_image_url,product_description
         const firstComma  = line.indexOf(',');
         const secondComma = line.indexOf(',', firstComma + 1);
         if (firstComma === -1 || secondComma === -1) return;
@@ -530,7 +519,7 @@
         const url = line.slice(firstComma + 1, secondComma).trim();
         if (id && url) productImageMap[id] = url;
       });
-      console.log(`✅ CSV cargado: ${Object.keys(productImageMap).length} productos`);
+      console.log(`CSV cargado: ${Object.keys(productImageMap).length} productos`);
     } catch (e) {
       console.warn('CSV no cargado (coloca product_dataset.csv junto al HTML):', e.message);
     }
@@ -538,7 +527,7 @@
 
   loadProductCSV();
 
-  // ── Drag & drop ───────────────────────────────────────────
+  // Drag & drop
   const previewContainer = document.getElementById('previewContainer');
   previewContainer.addEventListener('dragover', e => { e.preventDefault(); previewContainer.classList.add('drag-over'); });
   previewContainer.addEventListener('dragleave', () => previewContainer.classList.remove('drag-over'));
@@ -561,7 +550,7 @@
     reader.readAsDataURL(file);
   }
 
-  // ── Cargar imagen por URL ─────────────────────────────────
+  // Cargar imagen por URL
   function loadFromUrl() {
     const url = document.getElementById('urlInput').value.trim();
     if (!url) return;
@@ -572,13 +561,12 @@
       .then(r => r.blob())
       .then(blob => {
         currentImageFile = new File([blob], 'image.jpg', { type: blob.type || 'image/jpeg' });
-        currentImageUrl  = null;  // File listo, ya no necesitamos la URL
+        currentImageUrl  = null;
         const reader = new FileReader();
         reader.onload = e => { showPreview(e.target.result); showLoading(false); };
         reader.readAsDataURL(blob);
       })
       .catch(() => {
-        // Proxy falló: marcar que usaremos URL directa en el servidor
         currentImageFile = null;
         showPreview(url);
         showLoading(false);
@@ -600,7 +588,7 @@
     document.getElementById('garmentsList').classList.toggle('visible', false);
   }
 
-  // ── Llamada al modelo ─────────────────────────────────────
+  // Llamada al modelo
   async function analyzeImage() {
     const btn          = document.getElementById('searchBtn');
     const loading      = document.getElementById('loadingState');
@@ -620,13 +608,11 @@
       let response;
 
       if (currentImageFile) {
-        // Tenemos el File: enviar como multipart (subida local o URL convertida)
         const formData = new FormData();
         formData.append('file', currentImageFile);
         formData.append('top_k', '5');
         response = await fetch(`${API_URL}/predict`, { method: 'POST', body: formData });
       } else {
-        // Solo tenemos URL (proxy falló): el servidor la descarga
         response = await fetch(`${API_URL}/predict_url?url=${encodeURIComponent(currentImageUrl)}&top_k=5`, { method: 'POST' });
       }
 
@@ -640,7 +626,7 @@
 
     } catch (err) {
       if (err.message.includes('fetch') || err.message.includes('Failed') || err.message.includes('NetworkError')) {
-        errorMsg.innerHTML = '⚠️ No se puede conectar con el servidor local.<br><small>Asegúrate de que está corriendo:<br><code style="font-size:0.8em">KMP_DUPLICATE_LIB_OK=TRUE uvicorn main:app --port 8000</code></small>';
+        errorMsg.innerHTML = 'No se puede conectar con el servidor local.<br><small>Asegúrate de que está corriendo:<br><code style="font-size:0.8em">KMP_DUPLICATE_LIB_OK=TRUE uvicorn main:app --port 8000</code></small>';
       } else {
         errorMsg.textContent = `Error: ${err.message}`;
       }
@@ -652,7 +638,7 @@
     }
   }
 
-  // ── Renderizar resultados ─────────────────────────────────
+  // Renderizar resultados
   function renderResults(results) {
     const list  = document.getElementById('garmentsList');
     const count = document.getElementById('resultsCount');
@@ -670,7 +656,7 @@
       card.className = 'garment-card';
       card.style.animationDelay = `${i * 80}ms`;
 
-      // Resolver URL: primero desde el CSV local, luego lo que devuelva la API
+      // Resolver URL
       const imgUrl   = productImageMap[item.product_asset_id]
                     || (item.image_url && item.image_url !== 'None' ? item.image_url : null);
       const pct      = Math.round(item.similarity * 100);
@@ -693,10 +679,6 @@
           <div style="height:100%;width:${Math.min(pct,100)}%;background:${barColor};border-radius:2px;transition:width 0.6s ease;"></div>
         </div>
         <div style="font-size:0.7rem;opacity:0.35;letter-spacing:0.05em;margin-bottom:12px;">${item.product_asset_id}</div>
-        <div class="search-links">
-          <a class="search-link" href="https://www.zara.com/es/es/search?searchTerm=${searchQ}" target="_blank">Zara</a>
-          <a class="search-link" href="https://www.google.com/search?q=${searchQ}&tbm=shop" target="_blank">Google Shopping</a>
-        </div>
       `;
 
       list.appendChild(card);

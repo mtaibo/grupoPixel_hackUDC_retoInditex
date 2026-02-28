@@ -1,21 +1,6 @@
 import os
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
-"""
-main.py — Servidor local de inferencia CLIP + FAISS
-
-Arrancar:
-  pip install fastapi uvicorn open-clip-torch faiss-cpu torch torchvision pillow pandas pyarrow
-  uvicorn main:app --host 0.0.0.0 --port 8000
-
-Carpeta esperada junto a este archivo:
-  model/
-    best_model.pt
-    product_index.faiss
-    catalog_meta.parquet   (o catalog_meta.csv)
-    config.json
-"""
-
 import json
 from pathlib import Path
 from io import BytesIO
@@ -30,16 +15,12 @@ from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
 
-# ─────────────────────────────────────────────────────────────
 #  CONFIGURACIÓN
-# ─────────────────────────────────────────────────────────────
 MODEL_DIR = Path("./model")
 DEVICE    = "cuda" if torch.cuda.is_available() else "cpu"
 
-# ─────────────────────────────────────────────────────────────
-#  CARGA DEL MODELO (ocurre una sola vez al arrancar)
-# ─────────────────────────────────────────────────────────────
-print(f"🔧 Dispositivo: {DEVICE}")
+
+print(f"Dispositivo: {DEVICE}")
 
 with open(MODEL_DIR / "config.json") as f:
     config = json.load(f)
@@ -53,13 +34,13 @@ model, _, preprocess = open_clip.create_model_and_transforms(
 checkpoint = torch.load(MODEL_DIR / "best_model.pt", map_location=DEVICE)
 model.load_state_dict(checkpoint["model_state_dict"])
 model.eval()
-print(f"✅ CLIP cargado — epoch {checkpoint.get('epoch','?')} | R@5={checkpoint.get('best_recall_at_5','?'):.3f}")
+print(f" CLIP cargado — epoch {checkpoint.get('epoch','?')} | R@5={checkpoint.get('best_recall_at_5','?'):.3f}")
 
 # FAISS
 index = faiss.read_index(str(MODEL_DIR / "product_index.faiss"))
-print(f"✅ FAISS — {index.ntotal:,} productos indexados")
+print(f"FAISS — {index.ntotal:,} productos indexados")
 
-# Metadatos del catálogo (parquet o csv como fallback)
+# Metadatos del catálogo
 meta_parquet = MODEL_DIR / "catalog_meta.parquet"
 meta_csv     = MODEL_DIR / "catalog_meta.csv"
 if meta_parquet.exists():
@@ -69,26 +50,25 @@ elif meta_csv.exists():
 else:
     raise FileNotFoundError("No se encuentra catalog_meta.parquet ni catalog_meta.csv en ./model/")
 
-print(f"✅ Catálogo — {len(catalog):,} productos")
+print(f" Catálogo — {len(catalog):,} productos")
 
-# ─────────────────────────────────────────────────────────────
 #  INFERENCIA
-# ─────────────────────────────────────────────────────────────
+
 @torch.no_grad()
 def predict(image_bytes: bytes, top_k: int = 5):
-    # 1. Abrir imagen
+
     img = Image.open(BytesIO(image_bytes)).convert("RGB")
 
-    # 2. Preprocesar y calcular embedding
+    # Preprocesar y calcular embedding
     tensor = preprocess(img).unsqueeze(0).to(DEVICE)
     emb    = model.encode_image(tensor)
     emb    = F.normalize(emb, dim=-1).cpu().numpy().astype("float32")
 
-    # 3. Búsqueda FAISS
+    # Búsqueda FAISS
     scores, indices = index.search(emb, top_k)
     scores, indices = scores[0], indices[0]
 
-    # 4. Construir respuesta
+
     results = []
     for rank, (score, idx) in enumerate(zip(scores, indices), start=1):
         row = catalog.iloc[idx]
@@ -101,12 +81,11 @@ def predict(image_bytes: bytes, top_k: int = 5):
         })
     return results
 
-# ─────────────────────────────────────────────────────────────
+
 #  API
-# ─────────────────────────────────────────────────────────────
+
 app = FastAPI(title="Bundle Product Recognition")
 
-# CORS: permite que el HTML llame desde cualquier origen local
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -151,3 +130,4 @@ async def predict_endpoint(file: UploadFile = File(...), top_k: int = 5):
         raise HTTPException(status_code=500, detail=f"Error en inferencia: {str(e)}")
 
     return {"results": results, "top_k": top_k}
+
