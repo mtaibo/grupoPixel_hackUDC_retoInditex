@@ -1,0 +1,7 @@
+{
+  "clip_model": "ViT-B-32",
+  "clip_pretrain": "openai",
+  "embedding_dim": 512,
+  "n_products_indexed": 4012,
+  "best_recall_at_5": 0.31124499440193176
+}
