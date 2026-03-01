@@ -8,3 +8,4 @@ pillow
 pandas
 pyarrow
 python-multipart
+requests
