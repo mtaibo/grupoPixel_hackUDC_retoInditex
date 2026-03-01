@@ -24,12 +24,14 @@ Debido a la falta de potencia de GPU, el entrenamiento se realizó utilizando **
 
 ---
 
-## ⚙️ Instalación y Ejecución (Docker)
+## ⚙️ Instalación Rápida (Docker)
 
 La forma más rápida de ejecutar el proyecto es usando **Docker Compose**. Asegúrate de tener Docker abierto y ejecuta:
 
 ```bash
 docker compose up --build
+```
+
 
 ---
 
