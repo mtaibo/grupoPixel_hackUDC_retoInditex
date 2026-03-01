@@ -31,3 +31,20 @@ La forma más rápida de ejecutar el proyecto es usando **Docker Compose**. Aseg
 ```bash
 docker compose up --build
 
+---
+
+## 🐍 Instalación Manual (Python venv)
+
+Si prefieres no utilizar Docker, puedes configurar el entorno localmente siguiendo estos pasos:
+
+### 1. Preparar el Entorno Virtual
+Crea un espacio aislado para las dependencias para evitar conflictos con otros proyectos de tu sistema:
+```bash
+# Crear el entorno virtual
+python -m venv venv
+
+# Activar el entorno
+# En macOS/Linux:
+source venv/bin/activate
+# En Windows:
+.\venv\Scripts\activate
