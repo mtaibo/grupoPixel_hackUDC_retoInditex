@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+open-clip-torch
+faiss-cpu
+torch
+torchvision
+pillow
+pandas
+pyarrow
+python-multipart
