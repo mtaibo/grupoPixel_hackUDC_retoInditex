@@ -50,3 +50,11 @@ python -m venv venv
 source venv/bin/activate
 # En Windows:
 .\venv\Scripts\activate
+
+pip install -r requirements.txt
+
+# Activar frontend
+uvicorn main:app --host 0.0.0.0 --port 8001
+
+# Activar backend
+python3 -m http.server 3000
